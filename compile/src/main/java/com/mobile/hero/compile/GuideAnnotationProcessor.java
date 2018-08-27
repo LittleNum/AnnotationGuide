@@ -33,7 +33,8 @@ import javax.tools.Diagnostic;
 @AutoService(Processor.class)
 public class GuideAnnotationProcessor extends AbstractProcessor {
     private static final String FIELD_MAP_NAME = "guideNames";
-    private static final String FIELD_MAP_GUIDE = "guideMaps";
+    private static final String FIELD_MAP_GROUP = "guideGroups";
+    private static final String FIELD_MAP_PRIORITY = "guidePrioritys";
 
     Filer filer;
     Elements elements;
@@ -73,48 +74,56 @@ public class GuideAnnotationProcessor extends AbstractProcessor {
                 String group = guide.group();
                 int priority = guide.priority();
 
-                MethodSpec.Builder register = MethodSpec.methodBuilder("register")
-                        .addModifiers(Modifier.STATIC)
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(String.class, "group")
-                        .addCode("if(guideNames.containsKey(group)){\n" +
-                                "String clz = guideNames.get(group);\n" +
-                                "try{\n" +
-                                "com.mobile.hero.api.IGuide guide = (com.mobile.hero.api.IGuide) Class.forName(clz).newInstance();\n" +
-                                "guideMaps.put($S,guide);\n" +
-                                "}catch(Exception e){\n" +
-                                "e.printStackTrace();\n" +
-                                "}\n" +
-                                "}\n", group);
+                //三个静态map初始化
+                TypeName strMap = ParameterizedTypeName.get(Map.class, String.class, String.class);
+                FieldSpec guideNames = FieldSpec.builder(strMap, FIELD_MAP_NAME, Modifier.PRIVATE, Modifier.STATIC).build();
 
-                TypeName typeName = ParameterizedTypeName.get(Map.class, String.class, String.class);
-                FieldSpec guideNames = FieldSpec.builder(typeName, FIELD_MAP_NAME, Modifier.PUBLIC, Modifier.STATIC).build();
+                FieldSpec guideGroups = FieldSpec.builder(strMap, FIELD_MAP_GROUP, Modifier.PRIVATE, Modifier.STATIC).build();
 
-                TypeMirror iguide = null;
-                for (TypeMirror mirror : ((TypeElement) element).getInterfaces()) {
-                    messager.printMessage(Diagnostic.Kind.NOTE, "mirror:" + mirror);
-                    if (mirror.toString().contains("IGuide")) {
-                        iguide = mirror;
-                        break;
-                    }
-                }
-
-                TypeName map = ParameterizedTypeName.get(ClassName.get(Map.class),
-                        TypeName.get(String.class),
-                        TypeName.get(iguide));
-                FieldSpec guideMaps = FieldSpec.builder(map, FIELD_MAP_GUIDE, Modifier.PUBLIC, Modifier.STATIC).build();
+                TypeName intMap = ParameterizedTypeName.get(Map.class, String.class, Integer.class);
+                FieldSpec guidePrioritys = FieldSpec.builder(intMap, FIELD_MAP_PRIORITY, Modifier.PRIVATE, Modifier.STATIC).build();
 
                 CodeBlock init = CodeBlock.builder()
                         .add("guideNames=new $L<>();\n", HashMap.class.getName())
-                        .add("guideMaps=new $L<>();\n", HashMap.class.getName())
-                        .add("guideNames.put($S,$S);\n", group, ((TypeElement) element).getQualifiedName())
+                        .add("guideGroups=new $L<>();\n", HashMap.class.getName())
+                        .add("guidePrioritys=new $L<>();\n", HashMap.class.getName())
+                        .add("guideNames.put($S,$S);\n", ((TypeElement) element).getSimpleName(), ((TypeElement) element).getQualifiedName())
+                        .add("guideGroups.put($S,$S);\n", ((TypeElement) element).getSimpleName(), group)
+                        .add("guidePrioritys.put($S,$L);\n", ((TypeElement) element).getSimpleName(), priority)
                         .build();
 
+                //实现GuideCollect接口的方法
+                //①返回名称与完整类名的map
+                MethodSpec.Builder nameMethod = MethodSpec.methodBuilder("getGuidesName")
+                        .addAnnotation(Override.class)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addStatement("return $L", "guideNames")
+                        .returns(strMap);
+
+                //②返回名称与分组的map
+                MethodSpec.Builder groupMethod = MethodSpec.methodBuilder("getGuidesGroup")
+                        .addAnnotation(Override.class)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addStatement("return $L", "guideGroups")
+                        .returns(strMap);
+
+                //③返回名称与优先级的map
+                MethodSpec.Builder priorityMethod = MethodSpec.methodBuilder("getGuidesPriority")
+                        .addAnnotation(Override.class)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addStatement("return $L", "guidePrioritys")
+                        .returns(intMap);
+
+                //生成GuideManager.java
                 TypeSpec clz = TypeSpec.classBuilder("GuideManager")
                         .addModifiers(Modifier.PUBLIC)
-                        .addMethod(register.build())
+                        .addSuperinterface(ClassName.get("com.mobile.hero.api", "GuideCollect"))
                         .addField(guideNames)
-                        .addField(guideMaps)
+                        .addField(guideGroups)
+                        .addField(guidePrioritys)
+                        .addMethod(nameMethod.build())
+                        .addMethod(groupMethod.build())
+                        .addMethod(priorityMethod.build())
                         .addStaticBlock(init)
                         .build();
 

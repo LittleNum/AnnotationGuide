@@ -4,13 +4,29 @@ import android.content.Context;
 import android.view.View;
 
 public interface IGuide {
+    Context getContext();
+
+    void setContext(Context context);
+
+    void setGroup(String group);
+
+    String getGroup();
+
+    void setPriority(int priority);
+
+    int getPriority();
+
+    void setAnchorView(View anchor);
+
     boolean ableShow();
 
-    void show(Context context);
-
-    void show(Context context, View anchor);
+    void show();
 
     void dismiss();
 
-    void dismiss(Context context);
+    void addOnDismiss(OnDismiss onDismiss);
+
+    public interface OnDismiss {
+        void onGuideDismiss(IGuide guide);
+    }
 }
