@@ -6,6 +6,9 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
+import com.mobile.hero.api.config.GuideConfig;
+import com.mobile.hero.api.utis.AndroidMainHandler;
+
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
@@ -14,6 +17,7 @@ import static com.mobile.hero.api.GuideConstant.LogGuide;
 
 public class GroupGuide {
     private String mGroup;
+    private GuideConfig mConfig;
     private PriorityQueue<IGuideBridge> mGuideQueue = new PriorityQueue<>(InitialSize, new Comparator<IGuideBridge>() {
         @Override
         public int compare(IGuideBridge o1, IGuideBridge o2) {
@@ -26,7 +30,16 @@ public class GroupGuide {
     }
 
     GroupGuide(@NonNull String group) {
+        this();
         this.mGroup = group;
+    }
+
+    public GuideConfig getConfig() {
+        return mConfig;
+    }
+
+    public void setConfig(GuideConfig mConfig) {
+        this.mConfig = mConfig;
     }
 
     public void addGuideToGuide(IGuide guide) {
@@ -36,15 +49,36 @@ public class GroupGuide {
     }
 
     public void triggerGuide() {
-        if (mGuideQueue != null && mGuideQueue.size() > 0) {
-            IGuide guide = null;
-            while ((guide = mGuideQueue.poll()) == null) {
-                if (mGuideQueue.isEmpty()) {
-                    return;
+        IGuideBridge guide = pollGuideBridge();
+        if (guide == null) {
+            Log.i(LogGuide, getClass().getSimpleName() + " triggerGuide poll guide is null");
+            return;
+        }
+        long delay = mConfig != null ? mConfig.getFirstDelay() : 0;
+        if (delay > 0) {
+            final IGuide target = guide;
+            AndroidMainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    target.show();
                 }
-            }
+            }, delay);
+        } else {
             guide.show();
         }
+    }
+
+    private IGuideBridge pollGuideBridge() {
+        if (mGuideQueue != null && mGuideQueue.size() > 0) {
+            IGuideBridge guide;
+            while ((guide = mGuideQueue.poll()) == null || !guide.ableShow()) {
+                if (mGuideQueue.isEmpty()) {
+                    return null;
+                }
+            }
+            return guide;
+        }
+        return null;
     }
 
     class IGuideBridge implements IGuide {
@@ -134,12 +168,30 @@ public class GroupGuide {
             }
         }
 
+        @Override
+        public void notifyDismiss() {
+            if (guide != null) {
+                guide.notifyDismiss();
+            }
+        }
+
         private void next() {
-            if (mGuideQueue != null) {
-                IGuideBridge guide = mGuideQueue.poll();
-                if (guide != null) {
-                    guide.show();
-                }
+            IGuideBridge guide = pollGuideBridge();
+            if (guide == null) {
+                Log.i(LogGuide, getClass().getSimpleName() + " next poll guide is null");
+                return;
+            }
+            long gap = mConfig != null ? mConfig.getGuideGap() : 0;
+            if (gap > 0) {
+                final IGuideBridge target = guide;
+                AndroidMainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        target.show();
+                    }
+                }, gap);
+            } else {
+                guide.show();
             }
         }
     }

@@ -10,8 +10,8 @@ import com.mobile.hero.api.utis.AndroidMainHandler;
 import static com.mobile.hero.annotationguide.utils.Constants.DismissDelay;
 import static com.mobile.hero.annotationguide.utils.Constants.LogGuideTag;
 
-@Guide(group = "home", priority = 10)
-public class WelcomeGuide extends BaseGuide {
+@Guide(group = "home", priority = 40)
+public class ExcellentGuide extends BaseGuide {
     @Override
     public boolean ableShow() {
         return true;
@@ -20,19 +20,12 @@ public class WelcomeGuide extends BaseGuide {
     @Override
     public void show() {
         Log.i(LogGuideTag, getClass().getSimpleName() + " show");
-        Toast.makeText(getContext(), "welcome to my APP!!!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "Excellent guys~~~", Toast.LENGTH_SHORT).show();
         AndroidMainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 dismiss();
             }
         }, DismissDelay);
-    }
-
-    @Override
-    public void dismiss() {
-        Log.i(LogGuideTag, getClass().getSimpleName() + " dismiss");
-        super.dismiss();
-        Toast.makeText(getContext(), "goodbye，my dear!!!", Toast.LENGTH_SHORT).show();
     }
 }

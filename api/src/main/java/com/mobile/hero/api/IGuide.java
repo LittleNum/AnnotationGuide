@@ -26,7 +26,9 @@ public interface IGuide {
 
     void addOnDismiss(OnDismiss onDismiss);
 
-    public interface OnDismiss {
+    void notifyDismiss();
+
+    interface OnDismiss {
         void onGuideDismiss(IGuide guide);
     }
 }

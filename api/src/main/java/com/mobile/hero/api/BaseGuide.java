@@ -59,7 +59,17 @@ public class BaseGuide implements IGuide {
 
     @Override
     public void dismiss() {
+        notifyDismiss();
+    }
 
+    @Override
+    public void notifyDismiss() {
+        if (mOnDismiss == null) {
+            return;
+        }
+        for (OnDismiss dismiss : mOnDismiss) {
+            dismiss.onGuideDismiss(this);
+        }
     }
 
     @Override

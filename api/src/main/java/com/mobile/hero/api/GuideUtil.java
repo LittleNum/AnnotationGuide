@@ -3,21 +3,26 @@ package com.mobile.hero.api;
 import android.content.Context;
 import android.text.TextUtils;
 
-import java.util.Comparator;
+import com.mobile.hero.api.config.GuideConfig;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 public class GuideUtil {
-    public static Map<String, GroupGuide> sGroupGuides = new HashMap<>();
+    private static Map<String, GroupGuide> sGroupGuides = new HashMap<>();
     private static Map<String, String> sGuideNames;
     private static Map<String, String> sGuideGroup;
     private static Map<String, Integer> sGuidePriority;
+    private static GuideConfig sGuideConfig;
+
+    public static void initialConfig(GuideConfig config) {
+        sGuideConfig = config;
+    }
 
     public static void initialGuides() {
         //init
         try {
-            Class guideMgr = Class.forName("com.mobile.hero.annotationguide.guides" + ".GuideManager");
+            Class guideMgr = Class.forName("com.mobile.hero.annotationguide" + ".GuideCollector");
             GuideCollect collect = (GuideCollect) guideMgr.newInstance();
             sGuideNames = collect.getGuidesName();
             sGuideGroup = collect.getGuidesGroup();
@@ -47,6 +52,7 @@ public class GuideUtil {
                     newGuide.setPriority(priority);
                     newGuide.setGroup(group);
                     groupGuide.addGuideToGuide(newGuide);
+                    groupGuide.setConfig(sGuideConfig);
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
