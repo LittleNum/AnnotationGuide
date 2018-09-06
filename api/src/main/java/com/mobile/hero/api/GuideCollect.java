@@ -8,4 +8,6 @@ public interface GuideCollect {
     Map<String, String> getGuidesGroup();
 
     Map<String, Integer> getGuidesPriority();
+
+    Map<String, Integer> getGuidesAnchor();
 }

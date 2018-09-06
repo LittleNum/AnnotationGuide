@@ -11,4 +11,6 @@ public @interface Guide {
     String group() default "";
 
     int priority() default 0;
+
+    int anchor() default 0;
 }

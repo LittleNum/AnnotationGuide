@@ -1,5 +1,6 @@
 package com.mobile.hero.api;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.View;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 public class BaseGuide implements IGuide {
     private Context mCtx;
+    private int mAnchorId;
     private View mAnchor;
     private String group;
     private int priority;
@@ -41,6 +43,30 @@ public class BaseGuide implements IGuide {
     @Override
     public int getPriority() {
         return this.priority;
+    }
+
+    @Override
+    public void setAnchorViewId(int id) {
+        this.mAnchorId = id;
+    }
+
+    @Override
+    public int getAnchorViewId() {
+        return mAnchorId;
+    }
+
+    @Override
+    public View getAnchorView() {
+        if (mAnchor != null) {
+            return mAnchor;
+        } else {
+            mAnchor = null;
+            if (mCtx instanceof Activity) {
+                mAnchor = ((Activity) mCtx).findViewById(mAnchorId);
+                return mAnchor;
+            }
+        }
+        return null;
     }
 
     @Override

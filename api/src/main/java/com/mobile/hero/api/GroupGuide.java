@@ -132,6 +132,23 @@ public class GroupGuide {
         }
 
         @Override
+        public void setAnchorViewId(int id) {
+            if (guide != null) {
+                guide.setAnchorViewId(id);
+            }
+        }
+
+        @Override
+        public int getAnchorViewId() {
+            return guide != null ? guide.getAnchorViewId() : 0;
+        }
+
+        @Override
+        public View getAnchorView() {
+            return guide != null ? guide.getAnchorView() : null;
+        }
+
+        @Override
         public void setAnchorView(View anchor) {
             if (guide != null) {
                 guide.setAnchorView(anchor);

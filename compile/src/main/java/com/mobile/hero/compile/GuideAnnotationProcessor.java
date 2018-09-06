@@ -34,6 +34,7 @@ public class GuideAnnotationProcessor extends AbstractProcessor {
     private static final String FIELD_MAP_NAME = "guideNames";
     private static final String FIELD_MAP_GROUP = "guideGroups";
     private static final String FIELD_MAP_PRIORITY = "guidePrioritys";
+    private static final String FIELD_MAP_ANCHOR = "guideAnchors";
 
     private Filer filer;
     private Elements elements;
@@ -42,6 +43,7 @@ public class GuideAnnotationProcessor extends AbstractProcessor {
     private Map<String, String> mGuideNames = new HashMap<>();
     private Map<String, String> mGuideGroup = new HashMap<>();
     private Map<String, Integer> mGuidePriority = new HashMap<>();
+    private Map<String, Integer> mGuideAnchor = new HashMap<>();
 
     public GuideAnnotationProcessor() {
         super();
@@ -79,11 +81,13 @@ public class GuideAnnotationProcessor extends AbstractProcessor {
                 Guide guide = element.getAnnotation(Guide.class);
                 String group = guide.group();
                 int priority = guide.priority();
+                int anchor = guide.anchor();
 
                 String name = element.getSimpleName().toString();
                 mGuideNames.put(name, ((TypeElement) element).getQualifiedName().toString());
                 mGuideGroup.put(name, group);
                 mGuidePriority.put(name, priority);
+                mGuideAnchor.put(name, anchor);
             }
 
             if (mGuideNames.isEmpty()) {
@@ -96,36 +100,46 @@ public class GuideAnnotationProcessor extends AbstractProcessor {
 
             TypeName intMap = ParameterizedTypeName.get(Map.class, String.class, Integer.class);
             FieldSpec guidePrioritys = FieldSpec.builder(intMap, FIELD_MAP_PRIORITY, Modifier.PRIVATE, Modifier.STATIC).build();
+            FieldSpec guideAnchors = FieldSpec.builder(intMap, FIELD_MAP_ANCHOR, Modifier.PRIVATE, Modifier.STATIC).build();
 
             CodeBlock.Builder staticBlockBuilder = CodeBlock.builder()
                     .add("guideNames=new $L<>();\n", HashMap.class.getName())
                     .add("guideGroups=new $L<>();\n", HashMap.class.getName())
-                    .add("guidePrioritys=new $L<>();\n", HashMap.class.getName());
+                    .add("guidePrioritys=new $L<>();\n", HashMap.class.getName())
+                    .add("guideAnchors=new $L<>();\n", HashMap.class.getName());
             for (String name : mGuideNames.keySet()) {
                 staticBlockBuilder.add("guideNames.put($S,$S);\n", name, mGuideNames.get(name))
                         .add("guideGroups.put($S,$S);\n", name, mGuideGroup.get(name))
-                        .add("guidePrioritys.put($S,$L);\n", name, mGuidePriority.get(name));
+                        .add("guidePrioritys.put($S,$L);\n", name, mGuidePriority.get(name))
+                        .add("guideAnchors.put($S,$L);\n", name, mGuideAnchor.get(name));
             }
 
             //①返回名称与完整类名的map
             MethodSpec.Builder nameMethod = MethodSpec.methodBuilder("getGuidesName")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC)
-                    .addStatement("return $L", "guideNames")
+                    .addStatement("return $L", FIELD_MAP_NAME)
                     .returns(strMap);
 
             //②返回名称与分组的map
             MethodSpec.Builder groupMethod = MethodSpec.methodBuilder("getGuidesGroup")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC)
-                    .addStatement("return $L", "guideGroups")
+                    .addStatement("return $L", FIELD_MAP_GROUP)
                     .returns(strMap);
 
             //③返回名称与优先级的map
             MethodSpec.Builder priorityMethod = MethodSpec.methodBuilder("getGuidesPriority")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC)
-                    .addStatement("return $L", "guidePrioritys")
+                    .addStatement("return $L", FIELD_MAP_PRIORITY)
+                    .returns(intMap);
+
+            //③返回名称与anchor的map
+            MethodSpec.Builder anchorMethod = MethodSpec.methodBuilder("getGuidesAnchor")
+                    .addAnnotation(Override.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addStatement("return $L", FIELD_MAP_ANCHOR)
                     .returns(intMap);
 
             //生成GuideManager.java
@@ -135,9 +149,11 @@ public class GuideAnnotationProcessor extends AbstractProcessor {
                     .addField(guideNames)
                     .addField(guideGroups)
                     .addField(guidePrioritys)
+                    .addField(guideAnchors)
                     .addMethod(nameMethod.build())
                     .addMethod(groupMethod.build())
                     .addMethod(priorityMethod.build())
+                    .addMethod(anchorMethod.build())
                     .addStaticBlock(staticBlockBuilder.build())
                     .build();
 

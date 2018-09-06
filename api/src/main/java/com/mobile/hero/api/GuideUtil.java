@@ -13,6 +13,7 @@ public class GuideUtil {
     private static Map<String, String> sGuideNames;
     private static Map<String, String> sGuideGroup;
     private static Map<String, Integer> sGuidePriority;
+    private static Map<String, Integer> sGuideAnchor;
     private static GuideConfig sGuideConfig;
 
     public static void initialConfig(GuideConfig config) {
@@ -27,6 +28,7 @@ public class GuideUtil {
             sGuideNames = collect.getGuidesName();
             sGuideGroup = collect.getGuidesGroup();
             sGuidePriority = collect.getGuidesPriority();
+            sGuideAnchor = collect.getGuidesAnchor();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -48,9 +50,11 @@ public class GuideUtil {
                 try {
                     IGuide newGuide = (IGuide) Class.forName(sGuideNames.get(g)).newInstance();
                     int priority = sGuidePriority.containsKey(g) ? sGuidePriority.get(g) : 0;
+                    int anchor = sGuideAnchor.containsKey(g) ? sGuideAnchor.get(g) : 0;
                     newGuide.setContext(context);
                     newGuide.setPriority(priority);
                     newGuide.setGroup(group);
+                    newGuide.setAnchorViewId(anchor);
                     groupGuide.addGuideToGuide(newGuide);
                     groupGuide.setConfig(sGuideConfig);
                 } catch (ClassNotFoundException e) {

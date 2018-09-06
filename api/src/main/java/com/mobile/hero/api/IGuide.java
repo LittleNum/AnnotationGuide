@@ -16,7 +16,13 @@ public interface IGuide {
 
     int getPriority();
 
+    void setAnchorViewId(int id);
+
+    int getAnchorViewId();
+
     void setAnchorView(View anchor);
+
+    View getAnchorView();
 
     boolean ableShow();
 
